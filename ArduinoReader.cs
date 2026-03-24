@@ -8,6 +8,8 @@ public class ArduinoReader : MonoBehaviour
     public string portName = "COM8"; // !!! CHANGE THIS to your Arduino's port name !!!
     public int baudRate = 115200; // Must match the rate set in the Arduino code
 
+    public float speed = 0f;
+
     // Use this for initialization
     void Start()
     {
@@ -27,6 +29,8 @@ public class ArduinoReader : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        
+
         if (stream != null && stream.IsOpen)
         {
             try
@@ -34,9 +38,13 @@ public class ArduinoReader : MonoBehaviour
                 // Check if there is data available to read
                 if (stream.BytesToRead > 0)
                 {
-                    string value = stream.ReadLine(); // Read the line of data
-                    Debug.Log("Data received from Arduino: " + value);
+                    // Read the line of data
+                   
                     // You can now parse the 'value' and use it to control objects in Unity
+                    string value = stream.ReadLine();
+                    speed = ParseSpeed(value);
+                    Debug.Log("Speed (m/s):" + speed);
+                    //Debug.Log("Data received from Arduino: " + value);
                 }
             }
             catch (System.TimeoutException) { } // Handle timeout if no data is available
@@ -45,6 +53,27 @@ public class ArduinoReader : MonoBehaviour
                 Debug.LogError("Error reading from serial port: " + e.Message);
             }
         }
+
+    }
+
+    float ParseSpeed(string data)
+    {
+        // Split by comma to get each key=value pair
+        string[] pairs = data.Split(',');
+
+        foreach (string pair in pairs)
+        {
+            string trimmed = pair.Trim();
+
+            // Look for the Speed(m/s) key
+            if (trimmed.StartsWith("Speed(m/s)="))
+            {
+                string valueStr = trimmed.Substring("Speed(m/s)=".Length);
+                if (float.TryParse(valueStr, out float result))
+                    return result;
+            }
+        }
+        return 0f;
     }
 
     void OnApplicationQuit()
@@ -55,4 +84,6 @@ public class ArduinoReader : MonoBehaviour
             Debug.Log("Serial port closed.");
         }
     }
+
+    public float GetSpeed() => speed;
 }
